@@ -6,8 +6,10 @@ import sympy as sp
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+from mpl_toolkits.mplot3d import Axes3D
 
-defaultRange = (-100, 100)
+
+defaultRange = [-100, 100, -sp.oo, sp.oo]
 
 
 class window(tk.Tk):
@@ -53,9 +55,6 @@ class window(tk.Tk):
         self.leftFrame.rowconfigure(2, weight=1)
         self.leftFrame.rowconfigure(3, weight=0)
 
-        leftBotSep = tk.Canvas(self.leftFrame, height=2, bg="#d5d9dd", highlightthickness=0)
-        leftBotSep.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
-        
         self.leftFrame.rowconfigure(4, weight=1)
 
 
@@ -66,11 +65,8 @@ class window(tk.Tk):
         self.singleIntFr.grid(row=0, column=0, sticky="nsew", padx=3, pady=3)
 
 
-        self.doubleIntFr = doubleInt(self.leftFrame)
+        self.doubleIntFr = doubleInt(self.leftFrame, self)
         self.doubleIntFr.grid(row=2, column=0, sticky="nsew", padx=3, pady=3)
-
-        self.tripleIntFr = tripleInt(self.leftFrame)
-        self.tripleIntFr.grid(row=4, column=0, sticky="nsew", padx=3, pady=3)
 
     def draw_function(self):
         global defaultRange
@@ -84,29 +80,14 @@ class window(tk.Tk):
         start = self.singleIntFr.fromXentry.get().strip()
         end = self.singleIntFr.toXentry.get().strip()
 
-        if not start:
-            start = defaultRange[0]
-        else:
-            try:
-                start = float(start)
-            except:
-                start = defaultRange[0]
+        start = convert(start, 0)
+        end = convert(end, 1)
 
-
-        if not end:
-            end = defaultRange[1]
-            
-        else:
-            try:
-                end = float(end)
-            except:
-                end = defaultRange[1]
-
+        
         x = np.linspace(start, end, 1000)
 
         y = func(x)
 
-        #rangeY = (min(y), max(y))
         for widget in self.rightFrame.winfo_children():
             widget.destroy()
 
@@ -124,12 +105,122 @@ class window(tk.Tk):
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+    def draw_3d_function(self):
+        global defaultRange
+        rawFunction = self.doubleIntFr.fText.get().strip()
+
+        if not rawFunction:
+            return
+        
+        expr, func = text_to_function_2d(rawFunction)
+
+        startX = self.doubleIntFr.fromXentry.get().strip()
+        endX = self.doubleIntFr.toXentry.get().strip()
+
+        startY = self.doubleIntFr.fromYentry.get().strip()
+        endY = self.doubleIntFr.toYentry.get().strip()
+
+        startX = convert(startX, 0)
+        endX = convert(endX, 1)
+        startY = convert(startY, 0)
+        endY = convert(endY, 1)
+
+        x = np.linspace(startX, endX, 500)
+        y = np.linspace(startY, endY, 500)
+        X, Y = np.meshgrid(x, y)
+
+        Z = func(X, Y)
+
+        
+        for widget in self.rightFrame.winfo_children():
+            widget.destroy()
+        
+
+        fig = plt.figure(figsize=(8, 6), facecolor="#0c1218")
+        ax = fig.add_subplot(111, projection='3d')
+
+        surface = ax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.8)
 
 
+        ax.set_facecolor("#0c1218")
+        ax.set_xlabel('x', color='#d5d9dd')
+        ax.set_ylabel('y', color='#d5d9dd')
+        ax.set_zlabel('f(x,y)', color='#d5d9dd')
+        ax.tick_params(colors='#bedeff')
+        colorbar = fig.colorbar(surface)
+        colorbar.ax.tick_params(colors='#bedeff')
+        canvas = FigureCanvasTkAgg(fig, master=self.rightFrame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+    def calculate_single_int(self):
+        rawFunction = self.singleIntFr.fText.get().strip()
 
+        if not rawFunction:
+            return
+        
+        expr, func = text_to_function_1d(rawFunction)
 
-            
+        start = self.singleIntFr.fromXentry.get().strip()
+        end = self.singleIntFr.toXentry.get().strip()
+
+        start = convert(start, 2)
+        end = convert(end, 3)
+
+        x = sp.Symbol('x')
+
+        integratedF = sp.integrate(expr, x)
+
+        result = sp.integrate(expr, (x, start, end))
+
+        if result == sp.oo:
+            result = '∞'
+        elif result == -sp.oo:
+            result = '-∞'
+        else:
+            result = round(float(result), 3)
+
+        pretty_integral = sp.pretty(integratedF, use_unicode=True)
+        self.singleIntFr.integratedF.config(text=pretty_integral)
+        self.singleIntFr.result.config(text=str(result))
+
+    def calculate_double_int(self):
+        rawFunction = self.doubleIntFr.fText.get().strip()
+
+        if not rawFunction:
+            return
+        
+        expr, func = text_to_function_2d(rawFunction)
+
+        startX = self.doubleIntFr.fromXentry.get().strip()
+        endX = self.doubleIntFr.toXentry.get().strip()
+        startY = self.doubleIntFr.fromYentry.get().strip()
+        endY = self.doubleIntFr.toYentry.get().strip()
+
+        startX = convert(startX, 2)
+        endX = convert(endX, 3)
+        startY = convert(startY, 2)
+        endY = convert(endY, 3)
+
+        x, y = sp.symbols('x y')
+
+        integratedF = sp.integrate(expr, y, x)
+
+        result = sp.integrate(expr, (y, startY, endY), (x, startX, endX))
+
+        if result == sp.oo:
+            result = '∞'
+        elif result == -sp.oo:
+            result = '-∞'
+        else:
+            try:
+                result = round(float(result), 3)
+            except:
+                result = str(result)
+
+        pretty_integral = sp.pretty(integratedF, use_unicode=True)
+        self.doubleIntFr.integratedF.config(text=pretty_integral)
+        self.doubleIntFr.result.config(text=str(result))
 
 
 class singleInt(ttk.LabelFrame):
@@ -166,7 +257,7 @@ class singleInt(ttk.LabelFrame):
         
 
 
-        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, #command=self.calculate, 
+        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, command=self.window.calculate_single_int, 
                                         fg_color='#006dda', hover_color='#508ecc', font=('Arial', 18, 'bold'), width=200, height=35)
         
         
@@ -176,15 +267,22 @@ class singleInt(ttk.LabelFrame):
 
         self.drawButton.grid(column=0, row=6, pady=5,columnspan=6)
 
-        self.result = tk.Text()
+        ttk.Label(self, text="Integrovaná funkcia:", font=('Arial', 16, 'bold')).grid(column=0, row=7, pady=10, padx=10, sticky="e")
+        self.integratedF = ttk.Label(self, text="", font=('Courier New', 14), justify='left')
+        self.integratedF.grid(column=1, row=7, pady=10, padx=10, sticky="w", columnspan=5)
+
+        ttk.Label(self, text="Výsledok integrácie:", font=('Arial', 16, 'bold')).grid(column=0, row=8, pady=10, padx=10, sticky="e")
+        self.result = ttk.Label(self, text="", font=('Arial', 16))
+        self.result.grid(column=1, row=8, pady=10, padx=10, sticky="w", columnspan=5)
 
 
 
 class doubleInt(ttk.LabelFrame):
-    def __init__(self, parent): #treba poskusat relief : sunken flat raised groove
+    def __init__(self, parent, window): #treba poskusat relief : sunken flat raised groove
         super().__init__(parent, borderwidth=2, labelanchor="n",  padding=3, relief="solid", text="Dvojný Integrál")
         self.columnconfigure(0, weight=1)
 
+        self.window = window
         
 
         self.createWidgets()
@@ -213,80 +311,31 @@ class doubleInt(ttk.LabelFrame):
         self.toXentry.grid(column=1, row=3, sticky="w", pady=5)
 
         ttk.Label(self, text="Y Od:", font=('Arial', 12)).grid(column=2, row=2, sticky="w", padx=(5,2))
-        self.fromXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100, height=30)
-        self.fromXentry.grid(column=3, row=2, sticky="w", pady=5)
+        self.fromYentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100, height=30)
+        self.fromYentry.grid(column=3, row=2, sticky="w", pady=5)
 
         ttk.Label(self, text="Y Do:", font=('Arial', 12)).grid(column=2, row=3, sticky="w", padx=(5,2))
-        self.toXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100,height=30)
-        self.toXentry.grid(column=3, row=3, sticky="w", pady=5)
+        self.toYentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100,height=30)
+        self.toYentry.grid(column=3, row=3, sticky="w", pady=5)
 
 
 
-        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, #command=self.calculate, 
+        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, command=self.window.calculate_double_int,
                                         fg_color='#006dda', hover_color='#508ecc', font=('Arial', 18, 'bold'), width=200, height=35)
         self.calcButton.grid(column=0, row=4, pady=5, columnspan=6)
 
 
-        self.drawButton = ctk.CTkButton(self, text="Vykresli Graf Funkcie",  corner_radius=10, #command=self.calculate, 
+        self.drawButton = ctk.CTkButton(self, text="Vykresli Graf Funkcie",  corner_radius=10, command=self.window.draw_3d_function, 
                                         fg_color='#006dda', hover_color='#508ecc', font=('Arial', 18, 'bold'), width=200, height=35)
         self.drawButton.grid(column=0, row=5, pady=5, columnspan=6)
 
+        ttk.Label(self, text="Integrovaná funkcia:", font=('Arial', 16, 'bold')).grid(column=0, row=6, pady=10, padx=10, sticky="e")
+        self.integratedF = ttk.Label(self, text="", font=('Courier New', 14), justify='left')
+        self.integratedF.grid(column=1, row=6, pady=10, padx=10, sticky="w", columnspan=5)
 
-        self.result = tk.Text()
-
-class tripleInt(ttk.LabelFrame):
-    def __init__(self, parent): #treba poskusat relief : sunken flat raised groove
-        super().__init__(parent, borderwidth=2, labelanchor="n",  padding=3, relief="solid", text="Trojný Integrál")
-        self.columnconfigure(0, weight=1)
-        self.createWidgets()
-        
-    def createWidgets(self):
-        self.columnconfigure(0, weight=0)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=0)
-        self.columnconfigure(3, weight=1)
-        self.columnconfigure(4, weight=0)
-        self.columnconfigure(5, weight=1)
-
-        ttk.Label(self, text="Funkcia f(x, y, z)", font=('Arial', 20, 'bold')).grid(column=0, row=0, columnspan=6)
-
-        self.fText = ctk.CTkEntry(self, font=('Arial', 15), fg_color="#9da6ee", border_width=0)
-        self.fText.grid(column=0, row=1, columnspan=6, sticky="ew", pady=5)
-
-        ttk.Label(self, text="X Od:", font=('Arial', 12)).grid(column=0, row=2, sticky="w", padx=(5,2))
-        self.fromXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100, height=30)
-        self.fromXentry.grid(column=1, row=2, sticky="w", pady=5)
-
-        ttk.Label(self, text="X Do:", font=('Arial', 12)).grid(column=0, row=3, sticky="w", padx=(5,2))
-        self.toXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100,height=30)
-        self.toXentry.grid(column=1, row=3, sticky="w", pady=5)
-
-        ttk.Label(self, text="Y Od:", font=('Arial', 12)).grid(column=2, row=2, sticky="w", padx=(5,2))
-        self.fromXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100, height=30)
-        self.fromXentry.grid(column=3, row=2, sticky="w", pady=5)
-
-        ttk.Label(self, text="Y Do:", font=('Arial', 12)).grid(column=2, row=3, sticky="w", padx=(5,2))
-        self.toXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100,height=30)
-        self.toXentry.grid(column=3, row=3, sticky="w", pady=5)
-
-        ttk.Label(self, text="Z Od:", font=('Arial', 12)).grid(column=4, row=2, sticky="w", padx=(5,2))
-        self.fromXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100, height=30)
-        self.fromXentry.grid(column=5, row=2, sticky="w", pady=5)
-
-        ttk.Label(self, text="Z Do:", font=('Arial', 12)).grid(column=4, row=3, sticky="w", padx=(5,2))
-        self.toXentry = ctk.CTkEntry(self, font=('Arial', 12), fg_color="#9da6ee", border_width=0, width=100,height=30)
-        self.toXentry.grid(column=5, row=3, sticky="w", pady=5)
-
-
-        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, #command=self.calculate, 
-                                        fg_color='#006dda', hover_color='#508ecc', font=('Arial', 18, 'bold'), width=200, height=35)
-        self.calcButton.grid(column=0, row=4, pady=5, columnspan=6)
-
-
-    
-
-
-        self.result = tk.Text()
+        ttk.Label(self, text="Výsledok integrácie:", font=('Arial', 16, 'bold')).grid(column=0, row=7, pady=10, padx=10, sticky="e")
+        self.result = ttk.Label(self, text="", font=('Arial', 16))
+        self.result.grid(column=1, row=7, pady=10, padx=10, sticky="w", columnspan=5)
 
 
 def text_to_function_1d(text):
@@ -309,6 +358,17 @@ def text_to_function_3d(text):
     expression = sp.sympify(text)
     f = sp.lambdify((x, y, z), expression, 'numpy')
     return expression, f
+
+def convert(input, index):
+    global defaultRange
+
+    if not input:
+        return defaultRange[index]
+    else:
+        try:
+            return float(input)
+        except:
+            return defaultRange[index]
 
 
 
