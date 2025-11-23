@@ -146,6 +146,12 @@ class window(tk.Tk):
         ax.set_xlabel('x', color='#d5d9dd')
         ax.set_ylabel('y', color='#d5d9dd')
         ax.set_zlabel('f(x,y)', color='#d5d9dd')
+
+        for pane in [ax.xaxis.pane, ax.yaxis.pane, ax.zaxis.pane]:
+            pane.set_facecolor('#222831')
+            pane.set_edgecolor('#444444')
+            pane.set_alpha(1.0)
+
         ax.tick_params(colors='#bedeff')
         colorbar = fig.colorbar(surface)
         colorbar.ax.tick_params(colors='#bedeff')
@@ -257,7 +263,7 @@ class singleInt(ttk.LabelFrame):
         
 
 
-        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, command=self.window.calculate_single_int, 
+        self.calcButton = ctk.CTkButton(self, text="Vypočítaj Integrál",  corner_radius=10, command=self.window.calculate_single_int, 
                                         fg_color='#006dda', hover_color='#508ecc', font=('Arial', 18, 'bold'), width=200, height=35)
         
         
@@ -268,11 +274,11 @@ class singleInt(ttk.LabelFrame):
         self.drawButton.grid(column=0, row=6, pady=5,columnspan=6)
 
         ttk.Label(self, text="Integrovaná funkcia:", font=('Arial', 16, 'bold')).grid(column=0, row=7, pady=10, padx=10, sticky="e")
-        self.integratedF = ttk.Label(self, text="", font=('Courier New', 14), justify='left')
+        self.integratedF = ttk.Label(self, text="", font=('Courier New', 14, 'bold'), justify='left')
         self.integratedF.grid(column=1, row=7, pady=10, padx=10, sticky="w", columnspan=5)
 
         ttk.Label(self, text="Výsledok integrácie:", font=('Arial', 16, 'bold')).grid(column=0, row=8, pady=10, padx=10, sticky="e")
-        self.result = ttk.Label(self, text="", font=('Arial', 16))
+        self.result = ttk.Label(self, text="", font=('Courier New', 16, 'bold'))
         self.result.grid(column=1, row=8, pady=10, padx=10, sticky="w", columnspan=5)
 
 
@@ -320,7 +326,7 @@ class doubleInt(ttk.LabelFrame):
 
 
 
-        self.calcButton = ctk.CTkButton(self, text="Vypočítaj",  corner_radius=10, command=self.window.calculate_double_int,
+        self.calcButton = ctk.CTkButton(self, text="Vypočítaj Integrál",  corner_radius=10, command=self.window.calculate_double_int,
                                         fg_color='#006dda', hover_color='#508ecc', font=('Arial', 18, 'bold'), width=200, height=35)
         self.calcButton.grid(column=0, row=4, pady=5, columnspan=6)
 
@@ -330,11 +336,11 @@ class doubleInt(ttk.LabelFrame):
         self.drawButton.grid(column=0, row=5, pady=5, columnspan=6)
 
         ttk.Label(self, text="Integrovaná funkcia:", font=('Arial', 16, 'bold')).grid(column=0, row=6, pady=10, padx=10, sticky="e")
-        self.integratedF = ttk.Label(self, text="", font=('Courier New', 14), justify='left')
+        self.integratedF = ttk.Label(self, text="", font=('Courier New', 14, 'bold'), justify='left')
         self.integratedF.grid(column=1, row=6, pady=10, padx=10, sticky="w", columnspan=5)
 
         ttk.Label(self, text="Výsledok integrácie:", font=('Arial', 16, 'bold')).grid(column=0, row=7, pady=10, padx=10, sticky="e")
-        self.result = ttk.Label(self, text="", font=('Arial', 16))
+        self.result = ttk.Label(self, text="", font=('Courier New', 16, 'bold'))
         self.result.grid(column=1, row=7, pady=10, padx=10, sticky="w", columnspan=5)
 
 
